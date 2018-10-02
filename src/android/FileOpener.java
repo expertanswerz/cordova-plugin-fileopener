@@ -163,7 +163,7 @@ public class FileOpener extends CordovaPlugin {
     }
 
     private void downloadAndOpenFile(final Context context, final String fileUrl, final CallbackContext callbackContext) throws UnsupportedEncodingException {
-        final String filename = URLDecoder.decode(fileUrl.substring(fileUrl.lastIndexOf("/") + 1), "UTF-8");
+        final String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         final String extension = fileUrl.substring(fileUrl.lastIndexOf("."));
         final File tempFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), filename);
 
