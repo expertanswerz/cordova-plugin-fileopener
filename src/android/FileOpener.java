@@ -173,6 +173,8 @@ public class FileOpener extends CordovaPlugin {
                 openFile(Uri.fromFile(file), extension, context, callbackContext);
             } catch (JSONException e) {
                 Log.d(FILE_OPENER, "downloadAndOpenFile", e);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
             }
             return;
         }
@@ -196,6 +198,8 @@ public class FileOpener extends CordovaPlugin {
                             openFile(Uri.fromFile(file), extension, context, callbackContext);
                         } catch (JSONException e) {
                             Log.d(FILE_OPENER, "downloadAndOpenFile", e);
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
                         }
                     } else if (status == DownloadManager.STATUS_FAILED) {
                         manageDownloadStatusFailed(cursor, callbackContext);
