@@ -169,7 +169,8 @@ public class FileOpener extends CordovaPlugin {
 
         if (tempFile.exists()) {
             try {
-                openFile(Uri.fromFile(tempFile), extension, context, callbackContext);
+                File file= new File(URLDecoder.decode(tempFile.toString(),"UTF-8")) ;
+                openFile(Uri.fromFile(file), extension, context, callbackContext);
             } catch (JSONException e) {
                 Log.d(FILE_OPENER, "downloadAndOpenFile", e);
             }
@@ -191,7 +192,8 @@ public class FileOpener extends CordovaPlugin {
                     int status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
                         try {
-                            openFile(Uri.fromFile(tempFile), extension, context, callbackContext);
+                            File file= new File(URLDecoder.decode(tempFile.toString(),"UTF-8")) ;
+                            openFile(Uri.fromFile(file), extension, context, callbackContext);
                         } catch (JSONException e) {
                             Log.d(FILE_OPENER, "downloadAndOpenFile", e);
                         }
