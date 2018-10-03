@@ -7,6 +7,7 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 
 import android.annotation.TargetApi;
+
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 
@@ -18,6 +19,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
+import android.os.Build;
 import android.os.Environment;
 import android.content.pm.PackageManager;
 import android.app.DownloadManager;
@@ -26,6 +28,7 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 
 import android.content.ActivityNotFoundException;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 @TargetApi(9)
@@ -146,6 +149,7 @@ public class FileOpener extends CordovaPlugin {
     }
 
     private void openFile(Uri localUri, String extension, Context context, CallbackContext callbackContext) throws JSONException {
+
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setDataAndType(localUri, getMimeType(extension));
@@ -169,7 +173,7 @@ public class FileOpener extends CordovaPlugin {
 
         if (tempFile.exists()) {
             try {
-                File file= new File(URLDecoder.decode(tempFile.toString(),"UTF-8")) ;
+                File file = new File(URLDecoder.decode(tempFile.toString(), "UTF-8"));
                 openFile(Uri.fromFile(file), extension, context, callbackContext);
             } catch (JSONException e) {
                 Log.d(FILE_OPENER, "downloadAndOpenFile", e);
@@ -194,8 +198,18 @@ public class FileOpener extends CordovaPlugin {
                     int status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
                         try {
-                            File file= new File(URLDecoder.decode(tempFile.toString(),"UTF-8")) ;
-                            openFile(Uri.fromFile(file), extension, context, callbackContext);
+                            File file = new File(URLDecoder.decode(tempFile.toString(), "UTF-8"));
+                            Uri uri = null;
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                uri = FileProvider.getUriForFile(
+                                        context,
+                                        context.getApplicationContext()
+                                                .getPackageName() + ".provider", file);
+                            } else {
+                                uri = Uri.fromFile(file);
+                            }
+
+                            openFile(uri, extension, context, callbackContext);
                         } catch (JSONException e) {
                             Log.d(FILE_OPENER, "downloadAndOpenFile", e);
                         } catch (UnsupportedEncodingException e) {
