@@ -90,15 +90,63 @@ public class FileOpener extends CordovaPlugin {
                     // Local file uri (case of an already downloaded file)
                     Log.d(FILE_OPENER, "Opening file from local URI as it begins with file://");
                     File file = new File(fileURL.replaceFirst("^file:\\/\\/", ""));
-                    Uri uri = Uri.fromFile(file);
-                    Log.d(FILE_OPENER, "Local path: " + uri);
-                    this.openFile(uri, extension, context, callbackContext);
-                } else {
-                    try {
-                        this.downloadAndOpenFile(context, fileURL, callbackContext);
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException(e);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        final Uri uri = FileProvider.getUriForFile(
+                                context,
+                                context.getApplicationContext()
+                                        .getPackageName() + ".provider", file);
+                        Log.d("File URI: ", uri.toString());
+                        cordova.getThreadPool().execute(new Runnable() {
+                            public void run() {
+                                try {
+                                    openFile(uri, extension, context, callbackContext);
+                                }
+                                catch (JSONException e)
+                                {
+
+                                }
+                            }
+                        });
+                    } else {
+                        final Uri uri = Uri.fromFile(file);
+                        cordova.getThreadPool().execute(new Runnable() {
+                            public void run() {
+
+                                try {
+                                    openFile(uri, extension, context, callbackContext);
+                                }
+                                catch (JSONException e)
+                                {
+
+                                }
+                            }
+                        });
                     }
+
+
+
+
+
+
+                } else {
+
+
+                        cordova.getThreadPool().execute(new Runnable() {
+                            public void run() {
+
+                                try {
+                                    downloadAndOpenFile(context, fileURL, callbackContext);
+                                }
+                                catch (UnsupportedEncodingException e)
+                                {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        });
+
+
+
+
                 }
             }
             return true;
@@ -151,12 +199,18 @@ public class FileOpener extends CordovaPlugin {
     private void openFile(Uri localUri, String extension, Context context, CallbackContext callbackContext) throws JSONException {
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        intent.setDataAndType(localUri, getMimeType(extension));
         intent.setDataAndType(localUri, getMimeType(extension));
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                Intent.FLAG_ACTIVITY_NO_HISTORY);
+
         JSONObject obj = new JSONObject();
 
         try {
-            context.startActivity(intent);
+            //context.startActivity(intent);
+            cordova.getActivity().startActivity(Intent.createChooser(intent,"Open File In..."));
             obj.put("message", "successfull downloading and openning");
             callbackContext.success(obj);
         } catch (ActivityNotFoundException e) {
@@ -173,11 +227,27 @@ public class FileOpener extends CordovaPlugin {
 
         if (tempFile.exists()) {
             try {
-                File file = new File(URLDecoder.decode(tempFile.toString(), "UTF-8"));
-                openFile(Uri.fromFile(file), extension, context, callbackContext);
-            } catch (JSONException e) {
-                Log.d(FILE_OPENER, "downloadAndOpenFile", e);
-            } catch (UnsupportedEncodingException e) {
+                //File file = new File(URLDecoder.decode(tempFile.toString(), "UTF-8"));
+                //    openFile(Uri.fromFile(file), extension, context, callbackContext);
+                try {
+                    File file = new File(URLDecoder.decode(tempFile.toString(), "UTF-8"));
+                    Uri uri = null;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        uri = FileProvider.getUriForFile(
+                                context,
+                                context.getApplicationContext()
+                                        .getPackageName() + ".provider", file);
+                    } else {
+                        uri = Uri.fromFile(file);
+                    }
+                    Log.d("Download File URI: ", uri.toString());
+                    openFile(uri, extension, context, callbackContext);
+                } catch (JSONException e) {
+                    Log.d(FILE_OPENER, "downloadAndOpenFile", e);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }  catch (Exception e) {
                 e.printStackTrace();
             }
             return;
@@ -207,6 +277,7 @@ public class FileOpener extends CordovaPlugin {
                                                 .getPackageName() + ".provider", file);
                             } else {
                                 uri = Uri.fromFile(file);
+
                             }
 
                             openFile(uri, extension, context, callbackContext);
